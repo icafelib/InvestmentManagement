@@ -2,14 +2,15 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>主页 - 投资管理</title>
+  <title>主页 - 资产配置管理</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <h1>投资管理</h1>
+    <h1>资产配置管理</h1>
     <div>
       <span id="user-label"></span>
       <button id="logout-btn" class="link-btn">退出</button>
@@ -17,19 +18,28 @@
   </header>
 
   <section class="panel">
-    <h2>投资分布</h2>
-    <div class="chart-wrap"><canvas id="pie"></canvas></div>
+    <h2>资产配置分布</h2>
+    <div class="charts-row">
+      <div class="chart-cell">
+        <h3>按产品名称</h3>
+        <div class="chart-wrap"><canvas id="pie-name"></canvas></div>
+      </div>
+      <div class="chart-cell">
+        <h3>按资产类型</h3>
+        <div class="chart-wrap"><canvas id="pie-type"></canvas></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel">
-    <h2>投资清单</h2>
+    <h2>资产配置清单</h2>
     <div class="toolbar">
       <button id="add-btn">新增一行</button>
     </div>
     <table id="invest-table">
       <thead>
         <tr>
-          <th>编号</th><th>产品名</th><th>类型</th><th>金额</th><th>平台</th><th>操作</th>
+          <th>产品名称</th><th>代码</th><th>类型</th><th>金额</th><th>平台</th><th>占比</th><th>操作</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -43,7 +53,7 @@
 
   <section class="panel">
     <h2>实用工具</h2>
-    <textarea id="tools-text" rows="8" placeholder="在此填写任意字符串，自动保存到 KV"></textarea>
+    <textarea id="tools-text" rows="8" placeholder="在此填写任意字符串，自动保存到 KV" autocomplete="off" spellcheck="false"></textarea>
     <div class="toolbar">
       <button id="save-tools-btn">保存</button>
       <span id="tools-status" class="muted"></span>
@@ -52,10 +62,10 @@
 
   <!-- 编辑/新增弹窗 -->
   <dialog id="row-dialog">
-    <form method="dialog" id="row-form">
-      <h3 id="dialog-title">编辑投资</h3>
-      <label>编号 <input name="code" required /></label>
-      <label>产品名 <input name="name" required /></label>
+    <form method="dialog" id="row-form" autocomplete="off">
+      <h3 id="dialog-title">编辑资产配置</h3>
+      <label>产品名称 <input name="name" required autocomplete="off" /></label>
+      <label>代码 <input name="code" required autocomplete="off" /></label>
       <label>类型
         <select name="type" required>
           <option value="灵活资产">灵活资产</option>
@@ -63,8 +73,8 @@
           <option value="风险投资">风险投资</option>
         </select>
       </label>
-      <label>金额 <input name="amount" type="number" step="0.01" required /></label>
-      <label>平台 <input name="platform" required /></label>
+      <label>金额 <input name="amount" type="number" step="0.01" required autocomplete="off" /></label>
+      <label>平台 <input name="platform" required autocomplete="off" /></label>
       <menu>
         <button type="button" id="cancel-row">取消</button>
         <button type="submit" id="save-row">保存</button>

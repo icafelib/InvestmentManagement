@@ -2,7 +2,11 @@ const PAGE_SIZE = 10;
 let investments = [];
 let currentPage = 1;
 let editingId = null;
-let chart = null;
+let pieByName = null;
+let pieByType = null;
+
+// 注册 datalabels 插件（CDN 已加载到全局 ChartDataLabels）
+if (window.ChartDataLabels) Chart.register(window.ChartDataLabels);
 
 const tbody = document.querySelector('#invest-table tbody');
 const pageInfo = document.getElementById('page-info');
@@ -63,7 +67,7 @@ document.getElementById('save-tools-btn').addEventListener('click', async () => 
 
 function openDialog(row) {
   editingId = row?.id || null;
-  dialogTitle.textContent = row ? '编辑投资' : '新增投资';
+  dialogTitle.textContent = row ? '编辑资产配置' : '新增资产配置';
   rowForm.reset();
   if (row) {
     rowForm.code.value = row.code;
@@ -84,6 +88,7 @@ async function deleteRow(id) {
 
 function renderTable() {
   const total = investments.length;
+  const totalAmount = investments.reduce((s, r) => s + Number(r.amount || 0), 0);
   const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if (currentPage > maxPage) currentPage = maxPage;
   const start = (currentPage - 1) * PAGE_SIZE;
@@ -91,45 +96,88 @@ function renderTable() {
   tbody.innerHTML = '';
   for (const row of slice) {
     const tr = document.createElement('tr');
+    // 列顺序：产品名称、代码、类型、金额、平台、占比、操作
     tr.innerHTML = `
-      <td></td><td></td><td></td><td></td><td></td>
+      <td></td><td></td><td></td><td></td><td></td><td></td>
       <td>
         <button class="row-action" data-act="edit">编辑</button>
         <button class="row-action danger" data-act="del">删除</button>
       </td>`;
     const tds = tr.querySelectorAll('td');
-    tds[0].textContent = row.code;
-    tds[1].textContent = row.name;
+    tds[0].textContent = row.name;
+    tds[1].textContent = row.code;
     tds[2].textContent = row.type;
     tds[3].textContent = Number(row.amount).toLocaleString();
     tds[4].textContent = row.platform;
+    const pct = totalAmount > 0 ? (Number(row.amount || 0) / totalAmount * 100).toFixed(2) + '%' : '-';
+    tds[5].textContent = pct;
     tr.querySelector('[data-act="edit"]').addEventListener('click', () => openDialog(row));
     tr.querySelector('[data-act="del"]').addEventListener('click', () => deleteRow(row.id));
     tbody.appendChild(tr);
   }
-  pageInfo.textContent = `第 ${currentPage} / ${maxPage} 页 · 共 ${total} 条`;
+  pageInfo.textContent = `第 ${currentPage} / ${maxPage} 页 · 共 ${total} 条 · 总金额 ${totalAmount.toLocaleString()}`;
 }
 
-function renderChart() {
+function aggregate(field) {
   const map = new Map();
   for (const r of investments) {
-    map.set(r.name, (map.get(r.name) || 0) + Number(r.amount || 0));
+    const key = r[field] || '未分类';
+    map.set(key, (map.get(key) || 0) + Number(r.amount || 0));
   }
-  const labels = [...map.keys()];
-  const data = [...map.values()];
-  const ctx = document.getElementById('pie').getContext('2d');
-  if (chart) chart.destroy();
-  chart = new Chart(ctx, {
+  return { labels: [...map.keys()], data: [...map.values()] };
+}
+
+function buildPieConfig(labels, data) {
+  const total = data.reduce((a, b) => a + b, 0);
+  return {
     type: 'pie',
     data: {
       labels,
       datasets: [{
         data,
         backgroundColor: labels.map((_, i) => `hsl(${(i * 53) % 360} 70% 60%)`),
+        borderColor: '#fff',
+        borderWidth: 1,
       }],
     },
-    options: { plugins: { legend: { position: 'right' } } },
-  });
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed;
+              const pct = total > 0 ? (v / total * 100).toFixed(1) : '0.0';
+              return `${ctx.label}: ${Number(v).toLocaleString()} (${pct}%)`;
+            },
+          },
+        },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold', size: 12 },
+          formatter: (value) => {
+            if (!total || value / total < 0.03) return ''; // 占比 < 3% 隐藏避免重叠
+            return (value / total * 100).toFixed(1) + '%';
+          },
+        },
+      },
+    },
+  };
+}
+
+function renderCharts() {
+  const byName = aggregate('name');
+  const byType = aggregate('type');
+
+  if (pieByName) pieByName.destroy();
+  if (pieByType) pieByType.destroy();
+
+  const ctx1 = document.getElementById('pie-name').getContext('2d');
+  const ctx2 = document.getElementById('pie-type').getContext('2d');
+  pieByName = new Chart(ctx1, buildPieConfig(byName.labels, byName.data));
+  pieByType = new Chart(ctx2, buildPieConfig(byType.labels, byType.data));
 }
 
 async function loadInvestments() {
@@ -138,7 +186,7 @@ async function loadInvestments() {
   const data = await res.json();
   investments = data.items || [];
   renderTable();
-  renderChart();
+  renderCharts();
 }
 
 async function loadTools() {
