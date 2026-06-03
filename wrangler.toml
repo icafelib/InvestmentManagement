@@ -1,0 +1,23 @@
+name = "investment-management"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "public"
+
+# KV 命名空间需要先用 wrangler 创建后填入 id：
+#   wrangler kv namespace create USERS_KV
+#   wrangler kv namespace create DATA_KV
+#   wrangler kv namespace create TOOLS_KV
+[[kv_namespaces]]
+binding = "USERS_KV"
+id = "REPLACE_WITH_USERS_KV_ID"
+
+[[kv_namespaces]]
+binding = "DATA_KV"
+id = "REPLACE_WITH_DATA_KV_ID"
+
+[[kv_namespaces]]
+binding = "TOOLS_KV"
+id = "REPLACE_WITH_TOOLS_KV_ID"
+
+# 通过 `wrangler pages secret put SESSION_SECRET` 注入；本地可用 .dev.vars
+[vars]
+# SESSION_SECRET 请使用 secret 注入，不要明文写在这里
