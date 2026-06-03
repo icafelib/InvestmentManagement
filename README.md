@@ -45,6 +45,7 @@ npx wrangler login
 ```bash
 npx wrangler kv namespace create INVEST_USERS_KV
 npx wrangler kv namespace create INVEST_DATA_KV
+npx wrangler kv namespace create INVEST_RECORDS_KV
 npx wrangler kv namespace create INVEST_TOOLS_KV
 ```
 把每个命令输出的 `id` 填入 `wrangler.toml` 对应位置。
@@ -88,7 +89,7 @@ npm run dev
    - Build command：留空
    - Build output directory：`public`
 4. Settings → Functions → KV namespace bindings 中绑定：
-   - `INVEST_USERS_KV`、`INVEST_DATA_KV`、`INVEST_TOOLS_KV`（与 `wrangler.toml` 中名称一致）
+   - `INVEST_USERS_KV`、`INVEST_DATA_KV`、`INVEST_RECORDS_KV`、`INVEST_TOOLS_KV`
 5. Settings → Environment variables → Production → Add secret：
    - `SESSION_SECRET`
 6. 触发部署。

@@ -327,8 +327,253 @@ async function loadMe() {
   document.getElementById('user-label').textContent = data.username;
 }
 
+// ===== 资产详细记录 =====
+let records = [];
+let editingRecordId = null;
+let recordSortState = { key: 'date', dir: 'desc' };
+
+const recordTbody = document.querySelector('#record-table tbody');
+const recordEmpty = document.getElementById('record-empty');
+const recordDialog = document.getElementById('record-dialog');
+const recordDialogTitle = document.getElementById('record-dialog-title');
+const recordForm = document.getElementById('record-form');
+
+document.getElementById('add-record-btn').addEventListener('click', () => openRecordDialog());
+document.getElementById('cancel-record').addEventListener('click', () => recordDialog.close());
+
+recordForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(recordForm);
+  const cv = (fd.get('currentValue') || '').toString().trim();
+  const payload = {
+    date: fd.get('date'),
+    amount: parseFloat(fd.get('amount')),
+    product: (fd.get('product') || '').toString().trim(),
+    currentValue: cv === '' ? '' : parseFloat(cv),
+  };
+  if (editingRecordId) payload.id = editingRecordId;
+
+  const res = await fetch('/api/records', {
+    method: editingRecordId ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || '保存失败');
+    return;
+  }
+  recordDialog.close();
+  await loadRecords();
+});
+
+function openRecordDialog(row) {
+  editingRecordId = row?.id || null;
+  recordDialogTitle.textContent = row ? '编辑资产记录' : '新增资产记录';
+  recordForm.reset();
+  if (row) {
+    recordForm.date.value = row.date;
+    recordForm.amount.value = row.amount;
+    recordForm.product.value = row.product || '';
+    recordForm.currentValue.value = row.currentValue;
+  } else {
+    recordForm.date.value = new Date().toISOString().slice(0, 10);
+  }
+  recordDialog.showModal();
+}
+
+async function deleteRecord(id) {
+  if (!confirm('确认删除？')) return;
+  const res = await fetch('/api/records?id=' + encodeURIComponent(id), { method: 'DELETE' });
+  if (!res.ok) { alert('删除失败'); return; }
+  await loadRecords();
+}
+
+function sortRecords(list) {
+  const { key, dir } = recordSortState;
+  const factor = dir === 'asc' ? 1 : -1;
+  const numericKeys = new Set(['amount', 'currentValue']);
+  return [...list].sort((a, b) => {
+    const va = numericKeys.has(key) ? Number(a[key] || 0) : String(a[key] == null ? '' : a[key]);
+    const vb = numericKeys.has(key) ? Number(b[key] || 0) : String(b[key] == null ? '' : b[key]);
+    if (numericKeys.has(key)) return (va - vb) * factor;
+    return va.localeCompare(vb, 'zh-Hans-CN') * factor;
+  });
+}
+
+function updateRecordSortIndicators() {
+  document.querySelectorAll('#record-table th.sortable').forEach(th => {
+    const key = th.dataset.key;
+    const active = key === recordSortState.key;
+    th.classList.toggle('active', active);
+    let ind = th.querySelector('.sort-ind');
+    if (!ind) {
+      ind = document.createElement('span');
+      ind.className = 'sort-ind';
+      th.appendChild(ind);
+    }
+    ind.textContent = active ? (recordSortState.dir === 'asc' ? '▲' : '▼') : '⇅';
+  });
+}
+
+function renderRecords() {
+  const sorted = sortRecords(records);
+  recordTbody.innerHTML = '';
+  for (const row of sorted) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="date-cell"></td><td></td><td></td><td></td>
+      <td>
+        <button class="row-action" data-act="edit">编辑</button>
+        <button class="row-action danger" data-act="del">删除</button>
+      </td>`;
+    const tds = tr.querySelectorAll('td');
+    tds[0].textContent = row.date;
+    tds[0].title = '点击修改日期';
+    tds[0].addEventListener('click', (e) => {
+      if (tds[0].querySelector('input')) return;
+      startInlineDateEdit(tds[0], row);
+    });
+    tds[1].textContent = Number(row.amount).toLocaleString();
+    tds[2].textContent = row.product || '';
+    tds[3].textContent = Number(row.currentValue).toLocaleString();
+    tr.querySelector('[data-act="edit"]').addEventListener('click', () => openRecordDialog(row));
+    tr.querySelector('[data-act="del"]').addEventListener('click', () => deleteRecord(row.id));
+    recordTbody.appendChild(tr);
+  }
+  recordEmpty.style.display = records.length ? 'none' : '';
+  updateRecordSortIndicators();
+}
+
+function startInlineDateEdit(cell, row) {
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.value = row.date;
+  input.className = 'inline-date';
+  cell.textContent = '';
+  cell.appendChild(input);
+  input.focus();
+  // 尝试自动弹出原生日历（部分浏览器支持）
+  if (typeof input.showPicker === 'function') {
+    try { input.showPicker(); } catch {}
+  }
+  let done = false;
+  const commit = async () => {
+    if (done) return; done = true;
+    const newDate = input.value;
+    if (!newDate || newDate === row.date) { renderRecords(); return; }
+    const payload = { id: row.id, date: newDate, amount: row.amount, product: row.product, currentValue: row.currentValue };
+    const res = await fetch('/api/records', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) { alert('保存失败'); }
+    await loadRecords();
+  };
+  input.addEventListener('change', commit);
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { done = true; renderRecords(); }
+  });
+}
+
+document.querySelectorAll('#record-table th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (recordSortState.key === key) {
+      recordSortState.dir = recordSortState.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      recordSortState.key = key;
+      recordSortState.dir = (key === 'amount' || key === 'currentValue' || key === 'date') ? 'desc' : 'asc';
+    }
+    renderRecords();
+  });
+});
+
+async function loadRecords() {
+  const res = await fetch('/api/records');
+  if (res.status === 401) { location.href = '/'; return; }
+  const data = await res.json();
+  records = data.items || [];
+  renderRecords();
+}
+
+// ===== 年化率计算 =====
+const annualYearInput = document.getElementById('annual-year');
+const annualResult = document.getElementById('annual-result');
+document.getElementById('annual-calc-btn').addEventListener('click', () => calcAnnualReturn());
+annualYearInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') calcAnnualReturn(); });
+
+function calcAnnualReturn() {
+  const year = parseInt(annualYearInput.value, 10);
+  if (!Number.isFinite(year)) {
+    annualResult.textContent = '请输入年份';
+    annualResult.className = 'annual-result error-text';
+    return;
+  }
+  const yearStart = new Date(`${year}-01-01T00:00:00`);
+  const yearEnd = new Date(`${year}-12-31T00:00:00`);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const cutoff = today < yearEnd ? today : yearEnd;
+
+  // 选取在该年份内"投资"的记录
+  const inYear = records.filter(r => {
+    if (!r.date) return false;
+    const d = new Date(`${r.date}T00:00:00`);
+    return d >= yearStart && d <= yearEnd && d <= cutoff;
+  });
+
+  if (!inYear.length) {
+    annualResult.textContent = `${year} 年内无投资记录`;
+    annualResult.className = 'annual-result muted';
+    return;
+  }
+
+  const MS_PER_DAY = 86400000;
+  let totalAmount = 0, totalCurrent = 0, weightedDays = 0;
+  for (const r of inYear) {
+    const amount = Number(r.amount || 0);
+    const cv = Number(r.currentValue || 0);
+    const d = new Date(`${r.date}T00:00:00`);
+    const days = Math.max(1, Math.round((cutoff - d) / MS_PER_DAY));
+    totalAmount += amount;
+    totalCurrent += cv;
+    weightedDays += amount * days;
+  }
+  if (totalAmount <= 0) {
+    annualResult.textContent = '投资金额合计为 0，无法计算';
+    annualResult.className = 'annual-result error-text';
+    return;
+  }
+  const profit = totalCurrent - totalAmount;
+  const totalReturn = profit / totalAmount;
+  const avgDays = weightedDays / totalAmount;
+  const annualized = totalReturn * (365 / avgDays);
+
+  const fmt = (n) => Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const pct = (n) => (n * 100).toFixed(2) + '%';
+  annualResult.innerHTML =
+    `投入 <b>${fmt(totalAmount)}</b> · 当前 <b>${fmt(totalCurrent)}</b> · ` +
+    `收益 <b class="${profit >= 0 ? 'pos' : 'neg'}">${fmt(profit)}</b> ` +
+    `(${pct(totalReturn)}) · 加权持有 ${avgDays.toFixed(0)} 天 · ` +
+    `年化 <b class="${annualized >= 0 ? 'pos' : 'neg'}">${pct(annualized)}</b>`;
+  annualResult.className = 'annual-result';
+}
+
+// ===== Tab 切换 =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-pane').forEach(p => {
+      p.classList.toggle('active', p.id === `tab-${target}`);
+    });
+  });
+});
+
 (async () => {
   await loadMe();
   await loadInvestments();
   await loadTools();
+  await loadRecords();
 })();
