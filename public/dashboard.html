@@ -11,8 +11,13 @@
 <body>
   <header class="topbar">
     <h1>资产配置管理</h1>
-    <div>
-      <span id="user-label"></span>
+    <div class="topbar-right">
+      <div class="user-menu" id="user-menu">
+        <span id="user-label" class="user-label"></span>
+        <div class="user-dropdown">
+          <button type="button" id="change-pwd-btn" class="dropdown-item">修改密码</button>
+        </div>
+      </div>
       <button id="logout-btn" class="link-btn">退出</button>
     </div>
   </header>
@@ -39,7 +44,13 @@
     <table id="invest-table">
       <thead>
         <tr>
-          <th>产品名称</th><th>代码</th><th>类型</th><th>金额</th><th>平台</th><th>占比</th><th>操作</th>
+          <th class="sortable" data-key="name">产品名称</th>
+          <th class="sortable" data-key="code">代码</th>
+          <th class="sortable" data-key="type">类型</th>
+          <th class="sortable" data-key="amount">金额</th>
+          <th class="sortable" data-key="platform">平台</th>
+          <th class="sortable" data-key="pct">占比</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -48,6 +59,9 @@
       <button id="prev-btn">上一页</button>
       <span id="page-info"></span>
       <button id="next-btn">下一页</button>
+    </div>
+    <div class="toolbar">
+      <button id="export-btn">导出 CSV</button>
     </div>
   </section>
 
@@ -65,19 +79,35 @@
     <form method="dialog" id="row-form" autocomplete="off">
       <h3 id="dialog-title">编辑资产配置</h3>
       <label>产品名称 <input name="name" required autocomplete="off" /></label>
-      <label>代码 <input name="code" required autocomplete="off" /></label>
+      <label>代码 <input name="code" autocomplete="off" /></label>
       <label>类型
         <select name="type" required>
           <option value="灵活资产">灵活资产</option>
           <option value="稳健投资">稳健投资</option>
+          <option value="混合基金">混合基金</option>
           <option value="风险投资">风险投资</option>
         </select>
       </label>
       <label>金额 <input name="amount" type="number" step="0.01" required autocomplete="off" /></label>
-      <label>平台 <input name="platform" required autocomplete="off" /></label>
+      <label>平台 <input name="platform" autocomplete="off" /></label>
       <menu>
         <button type="button" id="cancel-row">取消</button>
         <button type="submit" id="save-row">保存</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 修改密码弹窗 -->
+  <dialog id="pwd-dialog">
+    <form method="dialog" id="pwd-form" autocomplete="off">
+      <h3>修改密码</h3>
+      <label>旧密码 <input name="oldPassword" type="password" required autocomplete="current-password" /></label>
+      <label>新密码 <input name="newPassword" type="password" required autocomplete="new-password" minlength="4" /></label>
+      <label>确认新密码 <input name="newPassword2" type="password" required autocomplete="new-password" minlength="4" /></label>
+      <p id="pwd-error" class="error"></p>
+      <menu>
+        <button type="button" id="cancel-pwd">取消</button>
+        <button type="submit" id="save-pwd">确定</button>
       </menu>
     </form>
   </dialog>

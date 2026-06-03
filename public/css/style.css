@@ -15,6 +15,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif
 /* 主页面 */
 .topbar { display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:#fff; border-bottom:1px solid #e5e7eb; }
 .topbar h1 { font-size:18px; margin:0; }
+.topbar-right { display:flex; align-items:center; gap:12px; }
+.user-menu { position:relative; display:inline-block; }
+.user-label { cursor:pointer; padding:6px 10px; border-radius:6px; font-size:14px; color:#333; display:inline-block; }
+.user-menu:hover .user-label { background:#f0f3f8; }
+.user-dropdown { position:absolute; top:100%; right:0; background:#fff; border:1px solid #e5e7eb; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.08); min-width:120px; padding:4px 0; display:none; z-index:10; }
+.user-menu:hover .user-dropdown, .user-menu:focus-within .user-dropdown { display:block; }
+.dropdown-item { display:block; width:100%; text-align:left; padding:8px 14px; background:none; border:none; cursor:pointer; font-size:14px; color:#333; }
+.dropdown-item:hover { background:#f5f7fa; color:#5b8def; }
 .link-btn { background:none; border:none; color:#5b8def; cursor:pointer; font-size:14px; }
 .panel { background:#fff; margin:16px 24px; padding:18px 22px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
 .panel h2 { margin:0 0 12px; font-size:16px; }
@@ -28,6 +36,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif
 table { width:100%; border-collapse:collapse; font-size:14px; }
 th, td { border-bottom:1px solid #eee; padding:8px 10px; text-align:left; }
 th { background:#fafbfc; font-weight:600; }
+th.sortable { cursor:pointer; user-select:none; }
+th.sortable:hover { background:#f0f3f8; }
+th.sortable .sort-ind { color:#aaa; font-size:11px; margin-left:4px; }
+th.sortable.active .sort-ind { color:#5b8def; }
 td .row-action { color:#5b8def; cursor:pointer; margin-right:8px; background:none; border:none; font-size:13px; }
 td .row-action.danger { color:#d33; }
 .pager { display:flex; justify-content:center; align-items:center; gap:14px; margin-top:12px; font-size:14px; }

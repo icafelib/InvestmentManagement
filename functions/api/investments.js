@@ -13,11 +13,11 @@ async function writeAll(env, user, items) {
 
 function validate(input) {
   if (!input) return '缺少数据';
-  const required = ['code', 'name', 'type', 'amount', 'platform'];
+  const required = ['name', 'type', 'amount'];
   for (const k of required) {
     if (input[k] === undefined || input[k] === null || input[k] === '') return `缺少字段 ${k}`;
   }
-  if (!['灵活资产', '稳健投资', '风险投资'].includes(input.type)) return '类型不合法';
+  if (!['灵活资产', '稳健投资', '混合基金', '风险投资'].includes(input.type)) return '类型不合法';
   const amount = Number(input.amount);
   if (!Number.isFinite(amount)) return '金额需为数字';
   return null;
@@ -42,11 +42,11 @@ export async function onRequest({ request, env }) {
     const id = crypto.randomUUID();
     items.push({
       id,
-      code: String(body.code),
+      code: body.code == null ? '' : String(body.code),
       name: String(body.name),
       type: body.type,
       amount: Number(body.amount),
-      platform: String(body.platform),
+      platform: body.platform == null ? '' : String(body.platform),
     });
     await writeAll(env, user, items);
     return json({ ok: true, id });
@@ -62,11 +62,11 @@ export async function onRequest({ request, env }) {
     if (idx < 0) return json({ error: '记录不存在' }, { status: 404 });
     items[idx] = {
       id: body.id,
-      code: String(body.code),
+      code: body.code == null ? '' : String(body.code),
       name: String(body.name),
       type: body.type,
       amount: Number(body.amount),
-      platform: String(body.platform),
+      platform: body.platform == null ? '' : String(body.platform),
     };
     await writeAll(env, user, items);
     return json({ ok: true });
