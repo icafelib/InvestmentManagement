@@ -69,6 +69,15 @@ td .row-action.danger { color:#d33; }
 .date-cell:hover { background:#f5f8ff; }
 .inline-date { padding:3px 6px; border:1px solid #5b8def; border-radius:4px; font-size:14px; }
 
+.users-dialog .users-dialog-inner { min-width:520px; }
+#users-table { width:100%; }
+#users-table th, #users-table td { padding:6px 10px; }
+.user-form-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.user-form-row label { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+.user-form-row input, .user-form-row select { padding:6px 8px; border:1px solid #ddd; border-radius:5px; font-size:14px; }
+.user-form-row button { padding:7px 16px; background:#5b8def; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+.user-form-row button:hover { background:#4974d8; }
+
 textarea { width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-family:inherit; font-size:14px; resize:vertical; }
 
 dialog { border:none; border-radius:10px; padding:22px; min-width:320px; box-shadow:0 10px 30px rgba(0,0,0,.2); }

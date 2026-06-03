@@ -19,6 +19,7 @@ functions/
     change-password.js
     investments.js         # CRUD 投资记录
     records.js             # CRUD 资产详细记录（时间/金额/产品/当前市值）
+    users.js               # 列表/添加/删除用户（仅管理员）
     tools.js               # 实用工具长文本
 scripts/hash-password.mjs  # 生成 {salt, hash}
 ```
@@ -35,7 +36,8 @@ scripts/hash-password.mjs  # 生成 {salt, hash}
   - 投资：`investments:<username>` → `INVEST_DATA_KV`（单 value 存全部条目的 JSON 数组）
   - 资产详细记录：`records:<username>` → `INVEST_RECORDS_KV`
   - 工具文本：`tools:<username>` → `INVEST_TOOLS_KV`
-- **鉴权**：HMAC-SHA256 签名 Cookie（HttpOnly + Secure + SameSite=Lax），所有受保护接口通过 `requireUser(request, env)` 校验，未登录返回 401。
+- **鉴权**：HMAC-SHA256 签名 Cookie（HttpOnly + Secure + SameSite=Lax），所有受保护接口通过 `requireUser(request, env)` 校验，未登录返回 401。管理员接口通过 `requireAdmin` 校验，非管理员返回 403。
+- **角色**：用户记录形如 `{ salt, hash, role }`，`role` 为 `"admin"` 或 `"user"`，缺省视为普通用户。**首个管理员**只能通过 KV 手动写入；后续用户可在网页"管理用户"中由管理员增删。session payload 不包含 role，每次需要时通过 `getUserRecord` 实时读 KV，避免角色变更后 session 仍然过授权。
 - **密码**：`sha256(salt + ":" + password)`，常量时间比较（见 `functions/_lib/auth.js`）。
 - **响应**：统一使用 `json(data, init)` 辅助函数。
 
@@ -52,6 +54,7 @@ scripts/hash-password.mjs  # 生成 {salt, hash}
 | POST | `/api/logout` | 清除 session |
 | GET  | `/api/me` | 当前用户名 |
 | POST | `/api/change-password` | 修改密码 |
+| GET/POST/DELETE | `/api/users` | 列出/添加/删除用户（仅管理员） |
 | GET/POST/PUT/DELETE | `/api/investments` | 投资 CRUD（DELETE 用 `?id=`） |
 | GET/POST/PUT/DELETE | `/api/records` | 资产详细记录 CRUD（字段：date/amount/product/currentValue；currentValue 留空默认等于 amount） |
 | GET/PUT | `/api/tools` | 工具长文本读写 |

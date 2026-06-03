@@ -51,20 +51,26 @@ npx wrangler kv namespace create INVEST_TOOLS_KV
 把每个命令输出的 `id` 填入 `wrangler.toml` 对应位置。
 
 ## 三、添加用户（手动写入 KV）
+> 普通用户后续可由**管理员在网页内**直接添加/删除。**首个管理员账号**只能通过手动写入 KV 创建。
+
 1. 生成密码记录：
    ```bash
    node scripts/hash-password.mjs '你的密码'
    # => {"salt":"...","hash":"..."}
    ```
-2. 写入 KV（key 格式：`user:<username>`）：
+2. 写入 KV（key 格式：`user:<username>`），管理员需在 value 中加入 `"role":"admin"`：
    ```bash
-   npx wrangler kv key put --binding=INVEST_USERS_KV "user:alice" '{"salt":"...","hash":"..."}'
+   # 首个管理员：
+   npx wrangler kv key put --binding=INVEST_USERS_KV "user:alice" '{"salt":"...","hash":"...","role":"admin"}'
+   # 普通用户（也可在网页"管理用户"中添加）：
+   npx wrangler kv key put --binding=INVEST_USERS_KV "user:bob" '{"salt":"...","hash":"...","role":"user"}'
    ```
 3. 删除用户：
    ```bash
    npx wrangler kv key delete --binding=INVEST_USERS_KV "user:alice"
    ```
 > 也可在 Cloudflare Dashboard → Workers & Pages → KV 中直接编辑。
+> 用户记录字段：`{ salt, hash, role }`，`role` 取值为 `"admin"` 或 `"user"`，缺省视为 `"user"`。
 
 ## 四、配置 Session 密钥
 生成一段足够长的随机字符串（≥32 字节）：
@@ -105,6 +111,10 @@ npm run deploy
 | POST | `/api/login` | `{ username, password, remember }` |
 | POST | `/api/logout` | 清除 session cookie |
 | GET  | `/api/me` | 当前登录用户名 |
+| POST | `/api/change-password` | 修改自身密码 |
+| GET | `/api/users` | 列出用户（仅管理员） |
+| POST | `/api/users` | 添加用户 `{ username, password, role }`，仅管理员 |
+| DELETE | `/api/users?username=` | 删除用户（仅管理员，且不能删自己） |
 | GET  | `/api/investments` | 列出当前用户全部投资 |
 | POST | `/api/investments` | 新增 |
 | PUT  | `/api/investments` | 修改（需带 id） |

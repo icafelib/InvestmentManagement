@@ -5,6 +5,7 @@ let editingId = null;
 let pieByName = null;
 let pieByType = null;
 let sortState = { key: 'amount', dir: 'desc' };
+let currentRole = 'user';
 
 // 注册 datalabels 插件（CDN 已加载到全局 ChartDataLabels）
 if (window.ChartDataLabels) Chart.register(window.ChartDataLabels);
@@ -325,6 +326,10 @@ async function loadMe() {
   if (res.status === 401) { location.href = '/'; return; }
   const data = await res.json();
   document.getElementById('user-label').textContent = data.username;
+  currentRole = data.role || 'user';
+  if (currentRole === 'admin') {
+    document.getElementById('manage-users-btn').style.display = '';
+  }
 }
 
 // ===== 资产详细记录 =====
@@ -569,6 +574,77 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       p.classList.toggle('active', p.id === `tab-${target}`);
     });
   });
+});
+
+// ===== 管理用户（仅管理员） =====
+const usersDialog = document.getElementById('users-dialog');
+const usersTbody = document.querySelector('#users-table tbody');
+const addUserForm = document.getElementById('add-user-form');
+const usersError = document.getElementById('users-error');
+
+document.getElementById('manage-users-btn').addEventListener('click', () => {
+  usersError.textContent = '';
+  addUserForm.reset();
+  loadUsers();
+  usersDialog.showModal();
+});
+document.getElementById('close-users').addEventListener('click', () => usersDialog.close());
+
+async function loadUsers() {
+  const res = await fetch('/api/users');
+  if (res.status === 401) { location.href = '/'; return; }
+  if (res.status === 403) {
+    usersTbody.innerHTML = '<tr><td colspan="3" class="muted">无权限</td></tr>';
+    return;
+  }
+  const data = await res.json();
+  const me = data.currentUser;
+  usersTbody.innerHTML = '';
+  for (const u of data.users || []) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td></td><td></td><td></td>`;
+    const tds = tr.querySelectorAll('td');
+    tds[0].textContent = u.username;
+    tds[1].textContent = u.role === 'admin' ? '管理员' : '普通用户';
+    if (u.username === me) {
+      tds[2].innerHTML = '<span class="muted">当前用户</span>';
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'row-action danger';
+      btn.textContent = '删除';
+      btn.addEventListener('click', () => deleteUser(u.username));
+      tds[2].appendChild(btn);
+    }
+    usersTbody.appendChild(tr);
+  }
+}
+
+async function deleteUser(username) {
+  if (!confirm(`确认删除用户「${username}」？该用户的投资数据不会被自动清理。`)) return;
+  const res = await fetch('/api/users?username=' + encodeURIComponent(username), { method: 'DELETE' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || '删除失败'); return; }
+  await loadUsers();
+}
+
+addUserForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  usersError.textContent = '';
+  const fd = new FormData(addUserForm);
+  const payload = {
+    username: (fd.get('username') || '').toString().trim(),
+    password: fd.get('password'),
+    role: fd.get('role') || 'user',
+  };
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { usersError.textContent = data.error || '添加失败'; return; }
+  addUserForm.reset();
+  await loadUsers();
 });
 
 (async () => {

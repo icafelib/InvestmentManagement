@@ -112,3 +112,21 @@ export async function requireUser(request, env) {
   if (!payload || !payload.u) return null;
   return payload.u; // username
 }
+
+export async function getUserRecord(env, username) {
+  const raw = await env.INVEST_USERS_KV.get(`user:${username}`);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+export function isAdmin(record) {
+  return !!record && record.role === 'admin';
+}
+
+export async function requireAdmin(request, env) {
+  const user = await requireUser(request, env);
+  if (!user) return { error: 'unauth' };
+  const record = await getUserRecord(env, user);
+  if (!isAdmin(record)) return { error: 'forbidden', user };
+  return { user, record };
+}

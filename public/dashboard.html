@@ -16,6 +16,7 @@
         <span id="user-label" class="user-label"></span>
         <div class="user-dropdown">
           <button type="button" id="change-pwd-btn" class="dropdown-item">修改密码</button>
+          <button type="button" id="manage-users-btn" class="dropdown-item" style="display:none;">管理用户</button>
         </div>
       </div>
       <button id="logout-btn" class="link-btn">退出</button>
@@ -165,6 +166,35 @@
         <button type="submit" id="save-record">保存</button>
       </menu>
     </form>
+  </dialog>
+
+  <!-- 管理用户弹窗（仅管理员可见） -->
+  <dialog id="users-dialog" class="users-dialog">
+    <div class="users-dialog-inner">
+      <h3>管理用户</h3>
+      <table id="users-table">
+        <thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h4 style="margin:16px 0 8px;">添加用户</h4>
+      <form id="add-user-form" autocomplete="off">
+        <div class="user-form-row">
+          <label>用户名 <input name="username" required pattern="[A-Za-z0-9_.\-]{1,32}" autocomplete="off" /></label>
+          <label>密码 <input name="password" type="password" minlength="4" required autocomplete="new-password" /></label>
+          <label>角色
+            <select name="role">
+              <option value="user" selected>普通用户</option>
+              <option value="admin">管理员</option>
+            </select>
+          </label>
+          <button type="submit">添加</button>
+        </div>
+        <p id="users-error" class="error"></p>
+      </form>
+      <menu>
+        <button type="button" id="close-users">关闭</button>
+      </menu>
+    </div>
   </dialog>
 
   <script src="/js/dashboard.js"></script>
