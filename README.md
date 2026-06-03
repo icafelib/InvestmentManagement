@@ -43,9 +43,9 @@ npx wrangler login
 
 ## 二、创建 KV 命名空间
 ```bash
-npx wrangler kv namespace create USERS_KV
-npx wrangler kv namespace create DATA_KV
-npx wrangler kv namespace create TOOLS_KV
+npx wrangler kv namespace create INVEST_USERS_KV
+npx wrangler kv namespace create INVEST_DATA_KV
+npx wrangler kv namespace create INVEST_TOOLS_KV
 ```
 把每个命令输出的 `id` 填入 `wrangler.toml` 对应位置。
 
@@ -57,11 +57,11 @@ npx wrangler kv namespace create TOOLS_KV
    ```
 2. 写入 KV（key 格式：`user:<username>`）：
    ```bash
-   npx wrangler kv key put --binding=USERS_KV "user:alice" '{"salt":"...","hash":"..."}'
+   npx wrangler kv key put --binding=INVEST_USERS_KV "user:alice" '{"salt":"...","hash":"..."}'
    ```
 3. 删除用户：
    ```bash
-   npx wrangler kv key delete --binding=USERS_KV "user:alice"
+   npx wrangler kv key delete --binding=INVEST_USERS_KV "user:alice"
    ```
 > 也可在 Cloudflare Dashboard → Workers & Pages → KV 中直接编辑。
 
@@ -88,7 +88,7 @@ npm run dev
    - Build command：留空
    - Build output directory：`public`
 4. Settings → Functions → KV namespace bindings 中绑定：
-   - `USERS_KV`、`DATA_KV`、`TOOLS_KV`（与 `wrangler.toml` 中名称一致）
+   - `INVEST_USERS_KV`、`INVEST_DATA_KV`、`INVEST_TOOLS_KV`（与 `wrangler.toml` 中名称一致）
 5. Settings → Environment variables → Production → Add secret：
    - `SESSION_SECRET`
 6. 触发部署。

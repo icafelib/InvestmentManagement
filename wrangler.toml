@@ -2,22 +2,13 @@ name = "investment-management"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "public"
 
-# KV 命名空间需要先用 wrangler 创建后填入 id：
-#   wrangler kv namespace create USERS_KV
-#   wrangler kv namespace create DATA_KV
-#   wrangler kv namespace create TOOLS_KV
-[[kv_namespaces]]
-binding = "USERS_KV"
-id = "REPLACE_WITH_USERS_KV_ID"
-
-[[kv_namespaces]]
-binding = "DATA_KV"
-id = "REPLACE_WITH_DATA_KV_ID"
-
-[[kv_namespaces]]
-binding = "TOOLS_KV"
-id = "REPLACE_WITH_TOOLS_KV_ID"
-
-# 通过 `wrangler pages secret put SESSION_SECRET` 注入；本地可用 .dev.vars
-[vars]
-# SESSION_SECRET 请使用 secret 注入，不要明文写在这里
+# KV / Secret 通过 Cloudflare Pages Dashboard 的 Bindings 注入，不在此声明，避免泄漏 id。
+# 需要绑定的 KV binding 名称（在 Dashboard → Settings → Bindings 中添加）：
+#   INVEST_USERS_KV
+#   INVEST_DATA_KV
+#   INVEST_TOOLS_KV
+# 需要的 Secret：
+#   SESSION_SECRET
+#
+# 仅本地 `wrangler pages dev` 调试时需要 KV id，可在 .dev.vars / 命令行参数中提供，
+# 也可临时在本文件加入 [[kv_namespaces]] 块（不要 commit 真实 id）。

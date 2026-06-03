@@ -3,12 +3,12 @@ import { requireUser, json } from '../_lib/auth.js';
 const KEY = (user) => `investments:${user}`;
 
 async function readAll(env, user) {
-  const raw = await env.DATA_KV.get(KEY(user));
+  const raw = await env.INVEST_DATA_KV.get(KEY(user));
   if (!raw) return [];
   try { return JSON.parse(raw); } catch { return []; }
 }
 async function writeAll(env, user, items) {
-  await env.DATA_KV.put(KEY(user), JSON.stringify(items));
+  await env.INVEST_DATA_KV.put(KEY(user), JSON.stringify(items));
 }
 
 function validate(input) {

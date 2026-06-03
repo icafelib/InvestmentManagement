@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 生成可写入 USERS_KV 的用户记录 JSON
+// 生成可写入 INVEST_USERS_KV 的用户记录 JSON
 // 用法： node scripts/hash-password.mjs <password>
 // 输出： {"salt":"...","hash":"..."}
 

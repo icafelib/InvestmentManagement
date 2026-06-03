@@ -6,7 +6,7 @@ export async function onRequestPost({ request, env }) {
   const { username, password, remember } = body || {};
   if (!username || !password) return json({ error: '用户名/密码不能为空' }, { status: 400 });
 
-  const raw = await env.USERS_KV.get(`user:${username}`);
+  const raw = await env.INVEST_USERS_KV.get(`user:${username}`);
   if (!raw) return json({ error: '用户名或密码错误' }, { status: 401 });
 
   let record;
