@@ -10,7 +10,10 @@ async function listAllUsers(env) {
     const res = await env.INVEST_USERS_KV.list({ prefix: 'user:', cursor });
     for (const k of res.keys) {
       const username = k.name.slice('user:'.length);
+      // 关键：用 cacheTtl:0（不允许更长，CF 限制最低 60s，这里走默认即可）读出实际数据，
+      // list 的全局最终一致性会滞后于 delete，过滤掉 get 已读不到的 key 可以避免幽灵记录。
       const raw = await env.INVEST_USERS_KV.get(k.name);
+      if (!raw) continue;
       let role = 'user';
       try { const r = JSON.parse(raw); if (r?.role === 'admin') role = 'admin'; } catch {}
       out.push({ username, role });
@@ -58,8 +61,7 @@ export async function onRequest({ request, env }) {
     const username = url.searchParams.get('username');
     if (!username) return json({ error: '缺少 username' }, { status: 400 });
     if (username === auth.user) return json({ error: '不能删除当前登录用户' }, { status: 400 });
-    const raw = await env.INVEST_USERS_KV.get(USER_KEY(username));
-    if (!raw) return json({ error: '用户不存在' }, { status: 404 });
+    // 幂等删除：不论 KV 中是否还能读到（list 的最终一致性可能滞后），都执行 delete
     await env.INVEST_USERS_KV.delete(USER_KEY(username));
     return json({ ok: true });
   }

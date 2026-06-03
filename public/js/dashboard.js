@@ -624,7 +624,14 @@ async function deleteUser(username) {
   const res = await fetch('/api/users?username=' + encodeURIComponent(username), { method: 'DELETE' });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { alert(data.error || '删除失败'); return; }
-  await loadUsers();
+  // KV list 最终一致性可能滞后导致刚删的用户仍出现在重新拉取的列表里，
+  // 所以这里直接从 DOM 中移除该行，并跳过立即 reload。
+  for (const tr of usersTbody.querySelectorAll('tr')) {
+    if (tr.firstChild && tr.firstChild.textContent === username) {
+      tr.remove();
+      break;
+    }
+  }
 }
 
 addUserForm.addEventListener('submit', async (e) => {
